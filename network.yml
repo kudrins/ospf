@@ -1,0 +1,109 @@
+---
+- name: routers
+  hosts: localhost
+  vars_files: vars.yml
+  become: false
+  gather_facts: false
+  tasks:
+  - name: deploy servers
+    local_action:
+      module: vmware_guest
+      hostname: "{{ vcenter_hostname }}"
+      username: "{{ vcenter_username }}"
+      password: "{{ vcenter_password }}"
+      validate_certs: False
+      datacenter: Datacenter
+      datastore: datastore_6TB
+      folder: otus_network
+      template: t_ubuntu_s
+      name: "{{item.name}}"
+      hardware:
+        memory_mb: "{{item.memory_mb}}"
+      networks:
+        - name: VMs11
+          ip: "{{item.ip}}"
+          netmask: "{{item.mask}}"
+        - name: VMs11
+          ip: "{{item.ip2}}"
+          netmask: "{{item.mask2}}"
+        - name: VMs11
+          ip: "{{item.ip3}}"
+          netmask: "{{item.mask3}}"
+        - name: VMs11
+          ip: "{{item.ip4}}"
+          netmask: "{{item.mask4}}"
+      customization:
+        hostname: "{{item.hostname}}"
+        dns_servers: [8.8.8.8]
+      state: powered-on
+      wait_for_ip_address: true
+    with_items: "{{routers}}"
+    delegate_to: localhost
+  tags:
+    deploy
+
+- name: OSPF
+  hosts: all
+  become: true
+  tasks:
+  # Обновление и установка пакетов vim, traceroute, tcpdump, net-tools
+  - name: install base tools
+    apt:
+      name:
+        - vim
+        - traceroute
+        - tcpdump
+        - net-tools
+      state: present
+      update_cache: true
+  # Отключаем UFW удаляем из автозагрузки
+  - name: disable ufw service
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+  # Добавляем gpg-key репозитория  
+  - name: add gpg frrouting.org
+    apt_key:
+      url: "https://deb.frrouting.org/frr/keys.asc"
+      state: present
+  # Добавляем репозитоорий
+  - name: add frr repo
+    apt_repository:
+      repo: 'deb https://deb.frrouting.org/frr {{ ansible_distribution_release }} frr-stable'
+      state: present
+  # обновляем пакеты и устанавливаем FRR
+  - name: install FRR packages
+    apt:
+      name: 
+        - frr
+        - frr-pythontools
+      state: present
+      update_cache: true
+  # Включаем маршрутизацтю пакетов
+  - name: set up forward packages across routers
+    sysctl:
+      name: net.ipv4.conf.all.forwarding
+      value: '1'
+      state: present
+  # Редактируем файл daemons
+  - name: edit daemons
+    shell: "{{item}}"
+    with_items:
+      - sed -i 's/ospfd=no/ospfd=yes/' /etc/frr/daemons
+  # Копируем файл frr.conf на хосты
+  - name: set up OSPF 
+    template:
+      src: frr.conf.j2
+      dest: /etc/frr/frr.conf
+      owner: frr
+      group: frr
+      mode: 0640
+# Перезапускаем FRR и добавляем в автозагрузку
+  - name: restart FRR
+    service:
+      name: frr
+      state: restarted
+      enabled: true
+  tags:
+    install

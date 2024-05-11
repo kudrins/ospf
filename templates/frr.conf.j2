@@ -1,0 +1,56 @@
+!Указание версии FRR
+frr version 8.1
+frr defaults traditional
+!Указываем имя машины
+hostname {{ ansible_hostname }}
+log syslog informational
+no ipv6 forwarding
+service integrated-vtysh-config
+!
+!Добавляем информацию об интерфейсе ens192
+interface ens192
+ !Указываем имя интерфейса
+ description ens192
+ !Указываем ip-aдрес и маску 
+ ip address {{ ip2 }}
+ !Указываем параметр игнорирования MTU
+ ip ospf mtu-ignore
+ !Если потребуется, можно указать «стоимость» интерфейса
+ !ip ospf cost 1000
+ !Указываем параметры hello-интервала для OSPF пакетов
+ ip ospf hello-interval 10
+ !Указываем параметры dead-интервала для OSPF пакетов
+ !Должно быть кратно предыдущему значению
+ ip ospf dead-interval 30
+!
+interface ens224
+ description ens224
+ ip address {{ ip3 }}
+ ip ospf mtu-ignore
+ !ip ospf cost 45
+ ip ospf hello-interval 10
+ ip ospf dead-interval 30
+
+interface ens256
+ description net_{{ ansible_hostname }}
+ ip address {{ ip4 }}
+ ip ospf mtu-ignore
+ !ip ospf cost 45
+ ip ospf hello-interval 10
+ ip ospf dead-interval 30 
+!
+!Начало настройки OSPF
+router ospf
+ !Указываем router-id 
+ router-id {{ router_id }}
+ !Указываем сети, которые хотим анонсировать соседним роутерам
+ network {{ net2 }} area 0
+ network {{ net3 }} area 0
+ network {{ net4 }} area 0 
+ !Указываем адреса соседних роутеров
+ neighbor {{ neighbor1 }}
+ neighbor {{ neighbor2 }}
+
+!Указываем адрес log-файла
+log file /var/log/frr/frr.log
+default-information originate always

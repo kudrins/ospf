@@ -1,0 +1,23 @@
+---
+vcenter_hostname: 10.100.10.1
+vcenter_username: administrator@vsphere.local
+vcenter_password: password
+
+routers:
+  - { name: router1, memory_mb: 2048, hostname: router1,
+      ip: 10.100.11.126, mask: 255.255.255.0,
+      ip2: 10.0.12.1, mask2: 255.255.255.252,
+      ip3: 10.0.10.1, mask3: 255.255.255.252,
+      ip4: 192.168.10.1, mask4: 255.255.255.0 }     
+    
+  - { name: router2, memory_mb: 2048, hostname: router2, 
+      ip: 10.100.11.127, mask: 255.255.255.0, 
+      ip2: 10.0.11.2, mask2: 255.255.255.252,
+      ip3: 10.0.10.2, mask3: 255.255.255.252,
+      ip4: 192.168.20.1, mask4: 255.255.255.0 } 
+
+  - { name: router3, memory_mb: 2048, hostname: router3, 
+      ip: 10.100.11.128, mask: 255.255.255.0, 
+      ip2: 10.0.12.2, mask2: 255.255.255.252,
+      ip3: 10.0.11.1, mask3: 255.255.255.252,
+      ip4: 192.168.30.1, mask4: 255.255.255.0 } 
